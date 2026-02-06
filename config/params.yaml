@@ -1,0 +1,290 @@
+# CTC-SAC Control Configuration File
+# Configuration parameters for hybrid control system
+
+# ============================================================================
+# Robot Parameters (Kinova Mico - 2-DOF Vertical Configuration)
+# ============================================================================
+robot:
+  # Link 1 parameters
+  link1:
+    length: 0.15              # meters
+    mass: 2.072               # kg
+    inertia: 0.001            # kg·m²
+    center_of_mass: 0.075     # meters (from joint)
+  
+  # Link 2 parameters
+  link2:
+    length: 0.15              # meters
+    mass: 1.072               # kg
+    inertia: 0.00098          # kg·m²
+    center_of_mass: 0.075     # meters (from joint)
+  
+  # Physical constants
+  gravity: 9.81               # m/s²
+  
+  # Joint limits
+  joint_limits:
+    position:
+      min: [-3.14, -3.14]     # radians
+      max: [3.14, 3.14]       # radians
+    velocity:
+      min: [-2.0, -2.0]       # rad/s
+      max: [2.0, 2.0]         # rad/s
+    torque:
+      min: [-10.0, -10.0]     # N·m
+      max: [10.0, 10.0]       # N·m
+
+# ============================================================================
+# Computed Torque Controller (CTC) Parameters
+# ============================================================================
+ctc:
+  # PD gains for error correction
+  kp: [100.0, 100.0]          # Proportional gains
+  kd: [20.0, 20.0]            # Derivative gains
+  
+  # Friction compensation
+  friction:
+    viscous: [0.1, 0.1]       # Viscous friction coefficients
+    coulomb: [0.05, 0.05]     # Coulomb friction coefficients
+    enable: false             # Enable/disable friction compensation
+  
+  # Control frequency
+  control_rate: 50            # Hz
+  
+  # Safety limits
+  max_error: 0.5              # Maximum tracking error (radians)
+  max_torque: 10.0            # Maximum torque (N·m)
+
+# ============================================================================
+# Soft Actor-Critic (SAC) Agent Parameters
+# ============================================================================
+sac:
+  # Network architecture
+  network:
+    actor_hidden_layers: [256, 256]
+    critic_hidden_layers: [256, 256]
+    activation: 'relu'        # relu, tanh, leaky_relu
+  
+  # Learning parameters
+  learning_rate:
+    actor: 0.0003
+    critic: 0.0003
+    alpha: 0.0003             # Temperature parameter learning rate
+  
+  # RL parameters
+  discount_factor: 0.99       # Gamma
+  tau: 0.005                  # Soft update coefficient
+  alpha_initial: 0.2          # Initial temperature parameter
+  alpha_auto_tune: true       # Automatic entropy tuning
+  
+  # Replay buffer
+  buffer_size: 1000000        # Maximum buffer size
+  batch_size: 256             # Training batch size
+  
+  # Action space (residual torque)
+  action_bounds:
+    min: -5.0                 # N·m
+    max: 5.0                  # N·m
+  
+  # State space dimensions (automatically determined)
+  state_dim: 8                # [q1, q2, q1_dot, q2_dot, q1_d, q2_d, q1_d_dot, q2_d_dot]
+  action_dim: 2               # [tau1_residual, tau2_residual]
+  
+  # Exploration noise
+  exploration_noise: 0.1      # Standard deviation for exploration
+
+# ============================================================================
+# Training Parameters
+# ============================================================================
+training:
+  # Training episodes
+  num_episodes: 200
+  max_timesteps: 200          # Maximum steps per episode
+  
+  # Learning schedule
+  start_learning_step: 1000   # Start training after this many steps
+  update_frequency: 1         # Update network every N steps
+  
+  # Evaluation
+  eval_frequency: 10          # Evaluate every N episodes
+  eval_episodes: 5            # Number of evaluation episodes
+  
+  # Model checkpointing
+  save_frequency: 20          # Save model every N episodes
+  checkpoint_dir: '/workspace/models'
+  
+  # Early stopping
+  early_stopping:
+    enable: true
+    patience: 30              # Episodes without improvement
+    min_improvement: 0.01     # Minimum improvement threshold
+  
+  # Logging
+  log_frequency: 1            # Log every N episodes
+  tensorboard_dir: '/workspace/logs'
+
+# ============================================================================
+# Trajectory Parameters
+# ============================================================================
+trajectory:
+  # Trajectory type: 'circle', 'lemniscate', 'sine', 'step'
+  type: 'circle'
+  
+  # Circle trajectory parameters
+  circle:
+    center: [0.0, 1.57]       # Center position [q1, q2] in radians
+    radius: 0.5               # Radius in radians
+    frequency: 0.5            # Hz
+    phase: 0.0                # Phase offset
+  
+  # Lemniscate (figure-8) parameters
+  lemniscate:
+    center: [0.0, 1.57]
+    amplitude: [0.5, 0.3]     # Amplitude for each joint
+    frequency: 0.3            # Hz
+  
+  # Sine wave parameters
+  sine:
+    amplitude: [0.5, 0.5]     # Amplitude for each joint
+    frequency: [0.5, 0.5]     # Frequency for each joint (Hz)
+    offset: [0.0, 1.57]       # Offset for each joint
+  
+  # Step trajectory parameters
+  step:
+    positions: [[0.0, 1.57], [0.5, 2.0], [-0.5, 1.0]]
+    duration: 2.0             # Duration at each position (seconds)
+
+# ============================================================================
+# Reward Function Parameters
+# ============================================================================
+reward:
+  # Position error weight
+  position_weight: -1.0
+  
+  # Velocity error weight
+  velocity_weight: -0.1
+  
+  # Control effort penalty
+  control_effort_weight: -0.01
+  
+  # Smoothness penalty (change in action)
+  smoothness_weight: -0.001
+  
+  # Bonus for staying within bounds
+  within_bounds_bonus: 0.1
+  
+  # Penalty for exceeding limits
+  limit_violation_penalty: -10.0
+  
+  # Success bonus (if error < threshold)
+  success_threshold: 0.05     # radians
+  success_bonus: 1.0
+
+# ============================================================================
+# CoppeliaSim Simulation Parameters
+# ============================================================================
+simulation:
+  # Connection settings
+  host: 'host.docker.internal'  # Docker host address
+  port: 23000                   # ZMQ Remote API port
+  
+  # Simulation settings
+  timestep: 0.02                # Simulation timestep (seconds) - 50 Hz
+  sync_mode: true               # Synchronous mode
+  
+  # Robot model settings
+  robot_name: 'KinovaMico'
+  joint_names:
+    - 'Mico_joint1'
+    - 'Mico_joint2'
+  
+  # Control mode: 'torque' or 'velocity' or 'position'
+  control_mode: 'torque'
+  
+  # Visualization
+  show_trajectory: true
+  show_tracking_error: true
+
+# ============================================================================
+# Experiment Configuration
+# ============================================================================
+experiment:
+  # Experiment name
+  name: 'ctc_sac_hybrid'
+  
+  # Random seed for reproducibility
+  seed: 42
+  
+  # Device: 'cuda', 'cpu', or 'auto'
+  device: 'auto'
+  
+  # Results directory
+  results_dir: '/workspace/results'
+  
+  # Comparison baselines
+  baselines:
+    - 'ctc_only'      # CTC without RL
+    - 'sac_only'      # Pure RL without CTC
+    - 'ctc_sac'       # Hybrid approach
+  
+  # Metrics to track
+  metrics:
+    - 'position_rmse'
+    - 'velocity_rmse'
+    - 'tracking_error_mean'
+    - 'tracking_error_max'
+    - 'control_effort'
+    - 'training_time'
+    - 'convergence_episode'
+
+# ============================================================================
+# ROS 2 Node Configuration
+# ============================================================================
+ros2:
+  # Node names
+  nodes:
+    ctc_node: 'ctc_controller'
+    sac_node: 'sac_controller'
+    combiner_node: 'hybrid_combiner'
+  
+  # Topic names
+  topics:
+    joint_states: '/joint_states'
+    ctc_torque: '/ctc_torque'
+    sac_torque: '/sac_torque'
+    combined_torque: '/combined_torque'
+    desired_trajectory: '/desired_trajectory'
+  
+  # QoS settings
+  qos:
+    reliability: 'reliable'    # reliable or best_effort
+    history: 'keep_last'
+    depth: 10
+  
+  # Node rates (Hz)
+  rates:
+    ctc_node: 50
+    sac_node: 50
+    combiner_node: 50
+
+# ============================================================================
+# Logging and Debugging
+# ============================================================================
+logging:
+  # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: 'INFO'
+  
+  # Log to file
+  log_to_file: true
+  log_file: '/workspace/logs/experiment.log'
+  
+  # Console output
+  verbose: true
+  
+  # Save plots
+  save_plots: true
+  plot_format: 'png'          # png, pdf, svg
+  
+  # Video recording
+  record_video: false
+  video_fps: 30

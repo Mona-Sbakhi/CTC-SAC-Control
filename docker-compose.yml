@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  ctc-sac-control:
+    # Use official ROS2 Humble Desktop image
+    image: osrf/ros:humble-desktop
+    container_name: ctc-sac-control
+    hostname: ctc-sac-robot
+    
+    # Network configuration for CoppeliaSim communication
+    network_mode: bridge
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    # Environment variables
+    environment:
+      # Display for GUI applications (if needed)
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_X11_NO_MITSHM=1
+      
+      # ROS2 configuration
+      - ROS_DOMAIN_ID=0
+      - ROS_DISTRO=humble
+      
+      # Python configuration
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      
+      # CoppeliaSim connection
+      - COPPELIASIM_HOST=host.docker.internal
+      - COPPELIASIM_PORT=23000
+    
+    # Volume mappings - match actual structure
+    volumes:
+      # Main ROS2 workspace (contains src/ with Python scripts)
+      - ./ros2_ws:/workspace/ros2_ws
+      
+      # Results directory (trained models, metrics, plots)
+      - ./results:/workspace/results
+      
+      # Configuration files (params.yaml, etc.)
+      - ./config:/workspace/config
+      
+      # X11 for GUI applications
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      
+      # Shared memory for better IPC performance
+      - /dev/shm:/dev/shm
+    
+    # Working directory - where Python scripts are located
+    working_dir: /workspace/ros2_ws/src
+    
+    # Keep container running with interactive bash
+    stdin_open: true
+    tty: true
+    
+    # Startup command with helpful information
+    command: /bin/bash -c "
+      echo '╔════════════════════════════════════════════════════════╗' &&
+      echo '║     CTC-SAC Control Environment - ROS2 Humble         ║' &&
+      echo '╚════════════════════════════════════════════════════════╝' &&
+      echo '' &&
+      echo '📂 Current Directory: /workspace/ros2_ws/src' &&
+      echo '🔗 CoppeliaSim: host.docker.internal:23000' &&
+      echo '' &&
+      echo '📦 Installation:' &&
+      echo '   pip install -r requirements.txt --break-system-packages' &&
+      echo '' &&
+      echo '🚀 Training:' &&
+      echo '   python train_in_coppeliasim.py' &&
+      echo '' &&
+      echo '🧪 Experiments:' &&
+      echo '   python ctc_sac_experiment.py' &&
+      echo '' &&
+      echo '📊 Results Directory: /workspace/results/' &&
+      echo '' &&
+      /bin/bash
+    "
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Optional: Resource limits (uncomment and adjust as needed)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '4.0'
+    #       memory: 8G
+    #     reservations:
+    #       cpus: '2.0'
+    #       memory: 4G
+
+# Optional: Networks configuration (if you want custom network)
+# networks:
+#   default:
+#     name: ctc-sac-network
+#     driver: bridge
