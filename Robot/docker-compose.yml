@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  ctc-sac:
+    build: .
+    container_name: ctc-sac-control
+    stdin_open: true
+    tty: true
+
+    volumes:
+      - ./src:/workspace/src          # source code
+      - ./models:/workspace/models    # trained models (.pt files)
+      - ./results:/workspace/results  # output metrics and plots
+
+    environment:
+      # CoppeliaSim runs on the Mac host — this address works automatically in Docker
+      - COPPELIASIM_HOST=host.docker.internal
+
+    # Allows container to reach CoppeliaSim on Mac (macOS Docker)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -1,0 +1,10 @@
+UPDATED TABLE VI — CoDIT 2026 Paper  (v2 — 2-DOF scene)
+Method      |   RMS q1|   RMS q2| Mean(full)|  SS Error|  TR Error|   Max q1
+-------------------------------------------------------------------------
+CTC-Only    |   1.6988|   1.6596|     2.3293|    2.4024|    2.3282|   2.1767
+CTC+SAC     |   1.5382|   1.6607|     2.2166|    2.2713|    2.2500|   2.0498
+RL-Only     |   1.7020|   1.6575|     2.3298|    2.4101|    2.3139|   2.1661
+PID+SAC     |   1.6484|   1.6578|     2.2917|    2.3573|    2.3016|   2.1405
+
+SS Error = mean error over last 50% of episode (t >= 5s)
+TR Error = mean error over first 20% of episode (t < 2s)

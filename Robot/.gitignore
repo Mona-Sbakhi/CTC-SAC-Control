@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+rb_env/
+*.egg-info/
+
+# Models (large binary files — use Git LFS or ignore)
+# Comment these lines out if you want to push models to GitHub
+# models/*.pt
+
+# Results (generated files)
+results/ts_*.csv
+results/training_*.json
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
